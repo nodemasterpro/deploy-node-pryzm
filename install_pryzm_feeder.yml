@@ -117,6 +117,6 @@
 
     - name: Show Pryzm Feeder wallet address
       debug:
-        msg: "L'adresse du wallet Pryzm Feeder est : {{ wallet_info.stdout | from_json | json_query('address') }}"
+        msg: "The Pryzm Feeder wallet address is : {{ wallet_info.stdout | from_json | json_query('address') }}"
     
   
