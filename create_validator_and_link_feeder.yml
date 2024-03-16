@@ -55,7 +55,7 @@
 
     - name: Ensure the Pryzm Feeder directory exists
       ansible.builtin.file:
-        path: "/root/feeder/logs"
+        path: "/root/pryzmfeeder/logs"
         state: directory
 
     - name: Create Pryzm Feeder service file from template

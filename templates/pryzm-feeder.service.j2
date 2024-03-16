@@ -4,8 +4,8 @@ After=network.target
 
 [Service]
 User=root
-WorkingDirectory=/root/feeder
-ExecStart=/usr/bin/docker run -d --name=pryzm-feeder --network host --restart=always -v "/root/feeder/config.yaml:/app/config.yaml" -v "/root/feeder/logs:/app/logs" --pull=always europe-docker.pkg.dev/pryzm-zone/core/pryzm-feeder:0.3.4
+WorkingDirectory=/root/pryzmfeeder
+ExecStart=/usr/bin/docker run --name=pryzm-feeder --network host --restart=always -v "/root/feeder/config.yaml:/app/config.yaml" -v "/root/feeder/logs:/app/logs" --pull=always europe-docker.pkg.dev/pryzm-zone/core/pryzm-feeder:0.3.4
 Restart=always
 
 [Install]

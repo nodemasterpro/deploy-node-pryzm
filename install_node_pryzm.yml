@@ -132,6 +132,7 @@
         - { regexp: '^pprof_laddr = "localhost:6060"', replace: 'pprof_laddr = "localhost:23260"' }
         - { regexp: '^laddr = "tcp://0.0.0.0:26656"', replace: 'laddr = "tcp://0.0.0.0:23256"' }
         - { regexp: '^prometheus_listen_addr = ":26660"', replace: 'prometheus_listen_addr = ":23266"' }
+        - { regexp: '^lcdUrl = "https://cosmos-testnet-api.w3coins.io"', replace: 'lcdUrl: = "https://testnet-cosmos-api.pryzm.zone/"' }
 
     - name: Update app.toml for custom ports
       replace:
