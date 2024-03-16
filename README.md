@@ -100,9 +100,3 @@ ansible-playbook remove_node_pryzm.yml
 ```
 
 Make sure to back up any important data before removing the Pryzm node, as this action may delete node data.
-
-
-
-
-
-
