@@ -1,0 +1,122 @@
+---
+- name: Install and configure Pryzm Feeder
+  hosts: localhost
+  become: true
+  vars:
+    pryzm_feeder_directory: "/root/pryzmfeeder"
+    pryzm_binary_url: "https://storage.googleapis.com/pryzm-zone/core/0.11.1/pryzmd-0.11.1-linux-amd64"
+    pryzm_feeder_image: europe-docker.pkg.dev/pryzm-zone/core/pryzm-feeder:0.3.4
+    postgres_password: "postgres"
+    pryzm_directory: "/root/.pryzm"
+    snapshot_url: "https://testnet-files.itrocket.net/pryzm/snap_pryzm.tar.lz4"
+
+  tasks:
+    - name: Install PostgreSQL and psycopg2
+      apt:
+        name:
+          - postgresql
+          - python3-psycopg2
+        state: latest
+        update_cache: yes
+
+    - name: Delete existing Pryzm Feeder wallet if exists
+      shell: pryzmd keys delete feeder -y
+      ignore_errors: true
+      changed_when: false
+      
+    - name: Create Pryzm Feeder wallet
+      shell: pryzmd keys add feeder --output json
+      register: wallet_info
+      changed_when: false
+
+    - name: Create Pryzm Feeder directory and download necessary files
+      shell: |
+        mkdir -p /root/pryzmfeeder && cd /root/pryzmfeeder
+        wget https://storage.googleapis.com/pryzm-zone/feeder/config.yaml
+        wget https://storage.googleapis.com/pryzm-zone/feeder/init.sql
+        wget https://storage.googleapis.com/pryzm-zone/feeder/docker-compose.yml
+
+    - name: Download Pryzm Feeder image
+      shell: docker pull {{ pryzm_feeder_image }}
+
+    - name: Configure PostgreSQL
+      block:
+        - name: Change password of postgres user
+          become: true
+          become_user: postgres
+          postgresql_user:
+            name: postgres
+            password: "{{ postgres_password }}"
+
+        - name: Move init.sql to a temporary directory
+          command: mv /root/pryzmfeeder/init.sql /tmp/init.sql
+
+        - name: Adjust permissions of init.sql for reading
+          file:
+            path: /tmp/init.sql
+            mode: '0644'
+
+        - name: Execute init.sql to configure the database
+          become: true
+          become_user: postgres
+          shell: psql < /tmp/init.sql
+
+    - name: Capture validator address
+      ansible.builtin.command:
+        cmd: pryzmd keys show feeder --bech val -a
+      register: validator_address
+      changed_when: false
+
+    - name: Updating the config.yaml file with wallet and validator information
+      lineinfile:
+        path: "{{ pryzm_feeder_directory }}/config.yaml"
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+      loop:
+        - { regexp: '^feeder:', line: "feeder: '{{ wallet_info.stdout | from_json | json_query('address') }}'" }
+        - { regexp: '^feederMnemonic:', line: "feederMnemonic: '{{ wallet_info.stdout | from_json | json_query('mnemonic') }}'" }
+        - { regexp: '^validator:', line: "validator: '{{ validator_address.stdout }}'" }
+
+    - name: Updating config.yaml file other values
+      ansible.builtin.replace:
+        path: "{{ pryzm_feeder_directory }}/config.yaml"
+        regexp: "{{ item.regexp }}"
+        replace: "{{ item.replace }}"
+      loop:
+        - { regexp: '^  rpcUrl: "http://localhost:26657"', replace: '  rpcUrl: "http://localhost:23257"' }
+        - { regexp: '^  wsUrl: "ws://localhost:26657"', replace: '  wsUrl: "ws://localhost:23257"' }
+        - { regexp: '^  gasPrice: "0.02factory/pryzm15k9s9p0ar0cx27nayrgk6vmhyec3lj7vkry7rx/uusdsim"', replace: '  gasPrice: "0.015upryzm"' }    
+
+
+    - name: Download and apply blockchain snapshot
+      block:
+        - name: Stop Pryzm service
+          systemd:
+            name: pryzm-node
+            state: stopped
+
+        - name: Backup private validator state
+          command: cp {{ pryzm_directory }}/data/priv_validator_state.json {{ pryzm_directory }}/priv_validator_state.json.backup
+
+        - name: Delete existing data
+          file:
+            path: "{{ pryzm_directory }}/data"
+            state: absent
+
+        - name: Download and extract the snapshot
+          shell: |
+            curl -L {{ snapshot_url }} | lz4 -d | tar -xf - -C {{ pryzm_directory }}
+
+        - name: Restore private validator state
+          command: mv {{ pryzm_directory }}/priv_validator_state.json.backup {{ pryzm_directory }}/data/priv_validator_state.json
+
+        - name: Restart Pryzm service and check logs
+          systemd:
+            name: pryzm-node
+            state: restarted
+
+    - name: Show Pryzm Feeder wallet address
+      debug:
+        msg: "L'adresse du wallet Pryzm Feeder est : {{ wallet_info.stdout | from_json | json_query('address') }}"
+    
+  

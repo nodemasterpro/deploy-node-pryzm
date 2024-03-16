@@ -1,0 +1,17 @@
+[Unit]
+Description=Pryzm Node Service
+After=network-online.target
+
+[Service]
+User=root
+ExecStart=/root/go/bin/cosmovisor run start
+ExecStop=/bin/pkill -f pryzmd
+Restart=on-failure
+RestartSec=10
+LimitNOFILE=65535
+Environment="DAEMON_HOME={{ pryzm_home }}"
+Environment="DAEMON_NAME=pryzmd"
+Environment="UNSAFE_SKIP_BACKUP=true"
+
+[Install]
+WantedBy=multi-user.target

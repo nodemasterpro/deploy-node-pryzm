@@ -1,0 +1,78 @@
+- name: Create the validator and link the feeder
+  hosts: localhost
+  gather_facts: no
+  vars_prompt:
+    - name: moniker
+      prompt: "Enter the moniker for the validator"
+      private: no
+
+    - name: details
+      prompt: "Enter details for the validator"
+      private: no
+
+    - name: website
+      prompt: "Enter the website for the validator"
+      private: no
+
+    - name: security_contact
+      prompt: "Enter the security contact for the validator"
+      private: no
+
+    - name: feeder_address
+      prompt: "Enter the Pryzm feeder wallet address"
+      private: no
+
+  tasks:
+    - name: Get the validator's public key
+      shell: pryzmd tendermint show-validator
+      register: validator_pubkey
+
+    - name: Create Validator
+      shell: |
+        pryzmd tx staking create-validator -y \
+          --pubkey '{{ validator_pubkey.stdout }}' \
+          --amount 1000000upryzm \
+          --moniker "{{ moniker }}" \
+          --identity "" \
+          --details "{{ details }}" \
+          --website "{{ website }}" \
+          --security-contact "{{ security_contact }}" \
+          --chain-id indigo-1 \
+          --from feeder \
+          --commission-rate "0.05" \
+          --commission-max-rate "0.20" \
+          --commission-max-change-rate "0.01" \
+          --min-self-delegation "1" \
+          --gas-adjustment 1.4 \
+          --gas auto \
+          --gas-prices 0.015upryzm
+      ignore_errors: True
+    
+    - name: Link Validator to Feeder
+      shell: |
+        pryzmd tx oracle delegate-feed-consent -y "{{ feeder_address }}" --fees 2000factory/pryzm15k9s9p0ar0cx27nayrgk6vmhyec3lj7vkry7rx/uusdsim,3000upryzm --from feeder
+      ignore_errors: True
+
+    - name: Ensure the Pryzm Feeder directory exists
+      ansible.builtin.file:
+        path: "/root/feeder/logs"
+        state: directory
+
+    - name: Create Pryzm Feeder service file from template
+      template:
+        src: pryzm-feeder.service.j2
+        dest: /etc/systemd/system/pryzm-feeder.service
+
+    - name: Reload systemd to apply new service
+      systemd:
+        daemon_reload: yes
+
+    - name: Start Pryzm Feeder service
+      systemd:
+        name: pryzm-feeder
+        state: started
+        enabled: yes
+
+    - name: Display Validator Address
+      debug:
+        msg: "Validator address: {{ validator_pubkey.stdout }}"

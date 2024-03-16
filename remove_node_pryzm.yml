@@ -1,0 +1,73 @@
+---
+- name: Supprimer Pryzm et Pryzm Feeder
+  hosts: localhost
+  become: true
+  vars:
+    pryzm_feeder_directory: "/root/pryzmfeeder"
+    pryzm_wallet_directory: "/root/.pryzm"
+    pryzm_feeder_service_name: "pryzm-feeder.service"
+    pryzm_service_name: "pryzm-node.service"
+
+  tasks:
+    - name: Arrêter les services Pryzm et Pryzm Feeder
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        state: stopped
+      loop:
+        - "{{ pryzm_service_name }}"
+        - "{{ pryzm_feeder_service_name }}"
+      ignore_errors: yes
+
+    - name: Désactiver les services Pryzm et Pryzm Feeder
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        enabled: no
+      loop:
+        - "{{ pryzm_service_name }}"
+        - "{{ pryzm_feeder_service_name }}"
+      ignore_errors: yes
+
+    - name: Supprimer les services Pryzm et Pryzm Feeder
+      ansible.builtin.file:
+        path: "/etc/systemd/system/{{ item }}"
+        state: absent
+      loop:
+        - "{{ pryzm_service_name }}"
+        - "{{ pryzm_feeder_service_name }}"
+
+    - name: Supprimer les répertoires Pryzm et Pryzm Feeder
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - "{{ pryzm_feeder_directory }}"
+        - "{{ pryzm_wallet_directory }}"
+
+    - name: Supprimer Docker Containers et Images associées à Pryzm Feeder
+      block:
+        - name: Supprimer le container Pryzm Feeder
+          ansible.builtin.shell:
+            cmd: docker rm -f pryzm-feeder
+          ignore_errors: yes
+
+        - name: Supprimer l'image Pryzm Feeder
+          ansible.builtin.shell:
+            cmd: docker rmi europe-docker.pkg.dev/pryzm-zone/core/pryzm-feeder:0.3.4
+          ignore_errors: yes
+
+    - name: Désinstaller PostgreSQL
+      ansible.builtin.apt:
+        name: 
+          - postgresql
+          - postgresql-contrib
+        state: absent
+      ignore_errors: yes
+
+    - name: Recharger la configuration systemd
+      ansible.builtin.systemd:
+        daemon_reload: true
+
+    - name: Kill any running Pryzm processes
+      command: pkill -f pryzmd
+      ignore_errors: true
+    

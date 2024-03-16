@@ -1,0 +1,184 @@
+---
+- name: Install and Initialize Pryzm Node
+  hosts: localhost
+  become: true
+  vars:
+    
+    moniker: "{{ moniker }}"  # Pass this variable as an extra var
+    chain_id: "indigo-1"
+    pryzm_directory: "/root/.pryzm"
+    pryzm_binary_url: "https://storage.googleapis.com/pryzm-zone/core/0.11.1/pryzmd-0.11.1-linux-amd64"
+    genesis_url: "https://snap.nodex.one/pryzm-testnet/genesis.json"
+    addrbook_url: "https://snap.nodex.one/pryzm-testnet/addrbook.json"
+    pryzm_home: "/root/.pryzm"
+    go_version: "1.21.6"  # La version de Go à installer
+
+  tasks:
+    - name: Install essential components
+      apt:
+        name:
+          - curl
+          - git
+          - jq
+          - lz4
+          - build-essential
+          - fail2ban
+          - ufw
+        update_cache: yes
+        state: latest
+
+    - name: Check if Docker is installed
+      command: docker --version
+      register: docker_version
+      failed_when: docker_version.rc != 0
+      ignore_errors: yes
+
+    - name: Install Docker Compose
+      shell: |
+        mkdir -p ~/.docker/cli-plugins/
+        curl -SL https://github.com/docker/compose/releases/download/v2.3.3/docker-compose-linux-x86_64 -o ~/.docker/cli-plugins/docker-compose
+        chmod +x ~/.docker/cli-plugins/docker-compose
+
+    - name: Install Go
+      block:
+        - name: Remove existing Go installation
+          file:
+            path: /usr/local/go
+            state: absent
+
+        - name: Download and extract Go
+          ansible.builtin.shell: |
+            curl -L "https://go.dev/dl/go{{ go_version }}.linux-amd64.tar.gz" | sudo tar -xzf - -C /usr/local
+
+        - name: Update .bash_profile with Go paths
+          lineinfile:
+            path: "/root/.bash_profile"
+            line: 'export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin'
+            create: yes
+
+    - name: Download and prepare Pryzm binaries
+      block:
+        - name: Download Pryzm binary
+          get_url:
+            url: "{{ pryzm_binary_url }}"
+            dest: "/usr/local/bin/pryzmd"
+            mode: '0755'
+        - name: Prepare binaries for Cosmovisor
+          shell: |
+            mkdir -p {{ pryzm_home }}/cosmovisor/genesis/bin
+            mv /usr/local/bin/pryzmd {{ pryzm_home }}/cosmovisor/genesis/bin/
+        - name: Create symlinks
+          shell: |
+            ln -s {{ pryzm_home }}/cosmovisor/genesis {{ pryzm_home }}/cosmovisor/current -f
+            ln -s {{ pryzm_home }}/cosmovisor/current/bin/pryzmd /usr/local/bin/pryzmd -f
+
+    - name: Set up Cosmovisor
+      shell: go install cosmossdk.io/tools/cosmovisor/cmd/cosmovisor@v1.5.0
+      environment:
+        PATH: "/usr/local/go/bin:{{ ansible_env.PATH }}"
+        GOPATH: "{{ ansible_env.HOME }}/go"
+        GOMODCACHE: "{{ ansible_env.HOME }}/go/pkg/mod"
+
+    - name: Configure Pryzm node and initialize
+      block:
+        - name: Setting Node config
+          shell: |
+            pryzmd config chain-id {{ chain_id }}
+            pryzmd config keyring-backend test
+            pryzmd config node tcp://localhost:23257
+        - name: Initialize Node
+          shell: pryzmd init {{ moniker }} --chain-id {{ chain_id }}
+
+    - name: Download Genesis and Addrbook files
+      get_url:
+        url: "{{ item.url }}"
+        dest: "{{ pryzm_directory }}/config/{{ item.file }}"
+      loop:
+        - { url: "{{ genesis_url }}", file: "genesis.json" }
+        - { url: "{{ addrbook_url }}", file: "addrbook.json" }
+
+    - name: Apply Node Configuration
+      block:
+        - name: Configure Seeds
+          lineinfile:
+            path: "{{ pryzm_directory }}/config/config.toml"
+            regexp: '^seeds =.*'
+            line: 'seeds = "d1d43cc7c7aef715957289fd96a114ecaa7ba756@testnet-seeds.nodex.one:23210"'
+        - name: Configure Gas Prices
+          lineinfile:
+            path: "{{ pryzm_directory }}/config/app.toml"
+            regexp: '^minimum-gas-prices =.*'
+            line: 'minimum-gas-prices = "0.015upryzm,0.01factory/pryzm15k9s9p0ar0cx27nayrgk6vmhyec3lj7vkry7rx/uusdsim"'
+
+    - name: Configure pruning settings
+      lineinfile:
+        path: "{{ pryzm_directory }}/config/app.toml"
+        regexp: '^{{ item.regexp }}'
+        line: '{{ item.line }}'
+      loop:
+        - { regexp: '^pruning =.*', line: 'pruning = "custom"' }
+        - { regexp: '^pruning-keep-recent =.*', line: 'pruning-keep-recent = "100"' }
+        - { regexp: '^pruning-keep-every =.*', line: 'pruning-keep-every = "0"' }
+        - { regexp: '^pruning-interval =.*', line: 'pruning-interval = "19"' }
+
+    - name: Configure custom ports
+      replace:
+        path: "{{ pryzm_directory }}/config/config.toml"
+        regexp: "{{ item.regexp }}"
+        replace: "{{ item.replace }}"
+      loop:
+        - { regexp: '^proxy_app = "tcp://127.0.0.1:26658"', replace: 'proxy_app = "tcp://127.0.0.1:23258"' }
+        - { regexp: '^laddr = "tcp://127.0.0.1:26657"', replace: 'laddr = "tcp://127.0.0.1:23257"' }
+        - { regexp: '^pprof_laddr = "localhost:6060"', replace: 'pprof_laddr = "localhost:23260"' }
+        - { regexp: '^laddr = "tcp://0.0.0.0:26656"', replace: 'laddr = "tcp://0.0.0.0:23256"' }
+        - { regexp: '^prometheus_listen_addr = ":26660"', replace: 'prometheus_listen_addr = ":23266"' }
+
+    - name: Update app.toml for custom ports
+      replace:
+        path: "{{ pryzm_directory }}/config/app.toml"
+        regexp: "{{ item.regexp }}"
+        replace: "{{ item.replace }}"
+      loop:
+        - { regexp: '^address = "tcp://0.0.0.0:1317"', replace: 'address = "tcp://0.0.0.0:23217"' }
+        - { regexp: '^address = ":8080"', replace: 'address = ":23280"' }
+        - { regexp: '^address = "0.0.0.0:9090"', replace: 'address = "0.0.0.0:23290"' }
+        - { regexp: '^address = "0.0.0.0:9091"', replace: 'address = "0.0.0.0:23291"' }
+        - { regexp: ':8545', replace: ':23245' }
+        - { regexp: ':8546', replace: ':23246' }
+        - { regexp: ':6065', replace: ':23265' }
+
+    - name: Download and extract the latest chain snapshot
+      block:
+        - name: Download snapshot
+          get_url:
+            url: "https://snap.nodex.one/pryzm-testnet/pryzm-latest.tar.lz4"
+            dest: "/tmp/pryzm-latest.tar.lz4"
+        - name: Extract snapshot
+          shell: |
+            lz4 -d /tmp/pryzm-latest.tar.lz4 | tar xf - -C {{ pryzm_directory }}
+        - name: Check if upgrade-info.json exists
+          stat:
+            path: "{{ pryzm_directory }}/data/upgrade-info.json"
+          register: upgrade_info
+        - name: Copy upgrade info json if present
+          copy:
+            src: "{{ pryzm_directory }}/data/upgrade-info.json"
+            dest: "{{ pryzm_directory }}/cosmovisor/genesis/upgrade-info.json"
+            remote_src: yes
+          when: upgrade_info.stat.exists
+
+    
+    - name: Create and start Pryzm node service
+      block:
+        - name: Create Pryzm node service file
+          template:
+            src: pryzm-node.service.j2
+            dest: /etc/systemd/system/pryzm.service
+        - name: Reload systemd manager configuration
+          systemd:
+            daemon_reload: yes
+        - name: Enable and start Pryzm node service
+          systemd:
+            name: pryzm-node
+            state: started
+            enabled: yes
