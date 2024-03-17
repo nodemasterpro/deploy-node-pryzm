@@ -85,7 +85,9 @@
       loop:
         - { regexp: '^  rpcUrl: "http://localhost:26657"', replace: '  rpcUrl: "http://localhost:23257"' }
         - { regexp: '^  wsUrl: "ws://localhost:26657"', replace: '  wsUrl: "ws://localhost:23257"' }
-        - { regexp: '^  gasPrice: "0.02factory/pryzm15k9s9p0ar0cx27nayrgk6vmhyec3lj7vkry7rx/uusdsim"', replace: '  gasPrice: "0.015upryzm"' }    
+        - { regexp: '^  gasPrice: "0.02factory/pryzm15k9s9p0ar0cx27nayrgk6vmhyec3lj7vkry7rx/uusdsim"', replace: '  gasPrice: "0.015upryzm"' }
+        - { regexp: '^  lcdUrl = "https://cosmos-testnet-api.w3coins.io"', replace: '  lcdUrl: = "https://testnet-cosmos-api.pryzm.zone/"' }
+    
 
 
     - name: Download and apply blockchain snapshot
