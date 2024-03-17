@@ -72,7 +72,13 @@
         name: pryzm-feeder
         state: started
         enabled: yes
+    
+    - name: Capture validator address
+      ansible.builtin.command:
+        cmd: pryzmd keys show feeder --bech val -a
+      register: validator_address
+      changed_when: false    
 
     - name: Display Validator Address
       debug:
-        msg: "Validator address: {{ validator_pubkey.stdout }}"
+        msg: "Validator address: {{ validator_address }}"
