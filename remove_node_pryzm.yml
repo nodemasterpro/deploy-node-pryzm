@@ -43,18 +43,6 @@
         - "{{ pryzm_feeder_directory }}"
         - "{{ pryzm_wallet_directory }}"
 
-    - name: Supprimer Docker Containers et Images associées à Pryzm Feeder
-      block:
-        - name: Supprimer le container Pryzm Feeder
-          ansible.builtin.shell:
-            cmd: docker rm -f pryzm-feeder
-          ignore_errors: yes
-
-        - name: Supprimer l'image Pryzm Feeder
-          ansible.builtin.shell:
-            cmd: docker rmi europe-docker.pkg.dev/pryzm-zone/core/pryzm-feeder:0.3.4
-          ignore_errors: yes
-
     - name: Désinstaller PostgreSQL
       ansible.builtin.apt:
         name: 
