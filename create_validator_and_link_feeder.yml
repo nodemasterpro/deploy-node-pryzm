@@ -58,21 +58,6 @@
         path: "/root/pryzmfeeder/logs"
         state: directory
 
-    - name: Create Pryzm Feeder service file from template
-      template:
-        src: pryzm-feeder.service.j2
-        dest: /etc/systemd/system/pryzm-feeder.service
-
-    - name: Reload systemd to apply new service
-      systemd:
-        daemon_reload: yes
-
-    - name: Start Pryzm Feeder service
-      systemd:
-        name: pryzm-feeder
-        state: started
-        enabled: yes
-    
     - name: Capture validator address
       ansible.builtin.command:
         cmd: pryzmd keys show feeder --bech val -a
