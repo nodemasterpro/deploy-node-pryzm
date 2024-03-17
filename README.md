@@ -70,10 +70,7 @@ website : "your website"
 contact info : "how to contact you"
 feeder : "the wallet feeder address"
 
-### Step 8: Viewing Logs Pryzm feeder
-To view the logs for the Pryzm feeder:
-```
-journalctl -u pryzm-feeder -f -o cat
+### Step 8: Viewing state validator
 
 You can check your state validator by pasting your valoper adresse https://testnet.chainsco.pe/pryzm.  The valoper address is provided at the end of the execution of the create_validator_and_link_feeder.yml script.
 
