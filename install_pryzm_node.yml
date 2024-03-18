@@ -66,7 +66,7 @@
         - name: Prepare binaries for Cosmovisor
           shell: |
             mkdir -p {{ pryzm_home }}/cosmovisor/genesis/bin
-            mv /usr/local/bin/pryzmd {{ pryzm_home }}/cosmovisor/genesis/bin/
+            mv -f /usr/local/bin/pryzmd {{ pryzm_home }}/cosmovisor/genesis/bin/
         - name: Create symlinks
           shell: |
             ln -s {{ pryzm_home }}/cosmovisor/genesis {{ pryzm_home }}/cosmovisor/current -f
