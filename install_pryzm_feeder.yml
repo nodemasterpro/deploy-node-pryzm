@@ -4,8 +4,8 @@
   become: true
   vars:
     pryzm_feeder_directory: "/root/pryzmfeeder"
-    pryzm_binary_url: "https://storage.googleapis.com/pryzm-zone/core/0.11.1/pryzmd-0.11.1-linux-amd64"
-    pryzm_feeder_image: europe-docker.pkg.dev/pryzm-zone/core/pryzm-feeder:0.3.4
+    pryzm_binary_url: "https://storage.googleapis.com/pryzm-zone/core/0.13.0/pryzmd-0.13.0-linux-amd64"
+    pryzm_feeder_image: europe-docker.pkg.dev/pryzm-zone/core/pryzm-feeder:0.3.10
     postgres_password: "postgres"
     pryzm_directory: "/root/.pryzm"
     snapshot_url: "https://testnet-files.itrocket.net/pryzm/snap_pryzm.tar.lz4"
@@ -36,8 +36,8 @@
         wget https://storage.googleapis.com/pryzm-zone/feeder/init.sql
         wget https://storage.googleapis.com/pryzm-zone/feeder/docker-compose.yml
 
-    - name: Download Pryzm Feeder image
-      shell: docker pull {{ pryzm_feeder_image }}
+    #- name: Download Pryzm Feeder image
+    #  shell: docker pull {{ pryzm_feeder_image }}
 
     - name: Configure PostgreSQL
       block:

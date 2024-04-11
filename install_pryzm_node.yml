@@ -7,7 +7,7 @@
     moniker: "{{ moniker }}"  # Pass this variable as an extra var
     chain_id: "indigo-1"
     pryzm_directory: "/root/.pryzm"
-    pryzm_binary_url: "https://storage.googleapis.com/pryzm-zone/core/0.11.1/pryzmd-0.11.1-linux-amd64"
+    pryzm_binary_url: "https://storage.googleapis.com/pryzm-zone/core/0.13.0/pryzmd-0.13.0-linux-amd64"
     genesis_url: "https://snap.nodex.one/pryzm-testnet/genesis.json"
     addrbook_url: "https://snap.nodex.one/pryzm-testnet/addrbook.json"
     pryzm_home: "/root/.pryzm"

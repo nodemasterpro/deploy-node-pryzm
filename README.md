@@ -89,6 +89,14 @@ To start the Pryzm node and Pryzm feeder services:
 sudo systemctl stop pryzm-node
 sudo systemctl stop pryzm-feeder
 ```
+
+### Updating the Pryzm Node
+To update the Pryzm node with the latest binary, use the update_pryzm_node.yml playbook. This script will stop the Pryzm node service, download the specified version of the Pryzm binary, replace the old binary, and restart the service with the new version. Run the playbook with the following command:
+
+```
+ansible-playbook update_node_pryzm.yml
+```
+
 ### Removing the Pryzm Node
 To remove the Pryzm node and Pryzm feeder, simply run the playbook again with the action set to remove:
 
