@@ -1,0 +1,55 @@
+---
+- name: Update Pryzm Node Binary
+  hosts: localhost
+  become: true
+  vars:
+    pryzmd_version: "0.13.0"  
+    pryzm_directory: "/root/.pryzm"
+    pryzm_binary_url: "https://storage.googleapis.com/pryzm-zone/core/{{ pryzmd_version }}/pryzmd-{{ pryzmd_version }}-linux-amd64"
+    binary_path: "/usr/local/bin/pryzmd"
+
+  tasks:
+    - name: Stop Pryzm node service
+      systemd:
+        name: pryzm-node
+        state: stopped
+
+    - name: Download new Pryzm binary
+      get_url:
+        url: "{{ pryzm_binary_url }}"
+        dest: "/tmp/pryzmd-{{ pryzmd_version }}-linux-amd64"
+        mode: '0755'
+
+    - name: Replace old binary with new binary
+      copy:
+        src: "/tmp/pryzmd-{{ pryzmd_version }}-linux-amd64"
+        dest: "{{ binary_path }}"
+        remote_src: yes
+        force: yes
+
+    - name: Set executable permissions on the new binary
+      file:
+        path: "{{ binary_path }}"
+        mode: '0755'
+
+    - name: Prepare directory for new binary in Cosmovisor
+      file:
+        path: "{{ pryzm_directory }}/cosmovisor/upgrades/{{ pryzmd_version }}/bin"
+        state: directory
+
+    - name: Copy new binary to Cosmovisor upgrade directory
+      copy:
+        src: "/tmp/pryzmd-{{ pryzmd_version }}-linux-amd64"
+        dest: "{{ pryzm_directory }}/cosmovisor/upgrades/{{ pryzmd_version }}/bin/pryzmd"
+        remote_src: yes
+
+    - name: Remove temporary binary file
+      file:
+        path: "/tmp/pryzmd-{{ pryzmd_version }}-linux-amd64"
+        state: absent
+
+    - name: Start Pryzm node service
+      systemd:
+        name: pryzm-node
+        state: started
+        enabled: yes
