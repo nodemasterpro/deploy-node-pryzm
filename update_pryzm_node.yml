@@ -40,7 +40,7 @@
     - name: Copy new binary to Cosmovisor upgrade directory
       copy:
         src: "/tmp/pryzmd-{{ pryzmd_version }}-linux-amd64"
-        dest: "{{ pryzm_directory }}/cosmovisor/upgrades/{{ pryzmd_version }}/bin/pryzmd"
+        dest: "{{ pryzm_directory }}/cosmovisor/upgrades/v{{ pryzmd_version }}/bin/pryzmd"
         remote_src: yes
 
     - name: Remove temporary binary file
