@@ -34,7 +34,7 @@
 
     - name: Prepare directory for new binary in Cosmovisor
       file:
-        path: "{{ pryzm_directory }}/cosmovisor/upgrades/{{ pryzmd_version }}/bin"
+        path: "{{ pryzm_directory }}/cosmovisor/upgrades/v{{ pryzmd_version }}/bin"
         state: directory
 
     - name: Copy new binary to Cosmovisor upgrade directory
