@@ -3,8 +3,8 @@
   hosts: localhost
   become: true
   vars:
-    pryzmd_version_url: "0.13.0"
-    pryzmd_version_path: "0.13" 
+    pryzmd_version_url: "0.15.0"
+    pryzmd_version_path: "0.15" 
     pryzm_directory: "/root/.pryzm"
     pryzm_binary_url: "https://storage.googleapis.com/pryzm-zone/core/{{ pryzmd_version_url }}/pryzmd-{{ pryzmd_version_url }}-linux-amd64"
     binary_path: "/usr/local/bin/pryzmd"
