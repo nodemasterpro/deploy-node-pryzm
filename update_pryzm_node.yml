@@ -44,6 +44,14 @@
         dest: "{{ pryzm_directory }}/cosmovisor/upgrades/v{{ pryzmd_version_path }}/bin/pryzmd"
         remote_src: yes
 
+    - name: Copy new binary to genesis directory
+      copy:
+        src: "/tmp/pryzmd-{{ pryzmd_version_url }}-linux-amd64"
+        dest: "//root/.pryzm/cosmovisor/genesis/bin/pryzmd"
+        remote_src: yes
+        force: yes 
+
+
     - name: Remove temporary binary file
       file:
         path: "/tmp/pryzmd-{{ pryzmd_version_url }}-linux-amd64"
