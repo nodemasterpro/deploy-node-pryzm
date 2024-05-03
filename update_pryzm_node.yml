@@ -3,10 +3,9 @@
   hosts: localhost
   become: true
   vars:
-    pryzmd_version_url: "0.15.0"
-    pryzmd_version_path: "0.15" 
+    pryzmd_version: "0.15"
     pryzm_directory: "/root/.pryzm"
-    pryzm_binary_url: "https://storage.googleapis.com/pryzm-zone/core/{{ pryzmd_version_url }}/pryzmd-{{ pryzmd_version_url }}-linux-amd64"
+    pryzm_binary_url: "https://storage.googleapis.com/pryzm-zone/core/{{ pryzmd_version }}.0/pryzmd-{{ pryzmd_version }}.0-linux-amd64"
     binary_path: "/usr/local/bin/pryzmd"
 
   tasks:
@@ -18,12 +17,12 @@
     - name: Download new Pryzm binary
       get_url:
         url: "{{ pryzm_binary_url }}"
-        dest: "/tmp/pryzmd-{{ pryzmd_version_url }}-linux-amd64"
+        dest: "/tmp/pryzmd-{{ pryzmd_version }}.0-linux-amd64"
         mode: '0755'
 
     - name: Replace old binary with new binary
       copy:
-        src: "/tmp/pryzmd-{{ pryzmd_version_url }}-linux-amd64"
+        src: "/tmp/pryzmd-{{ pryzmd_version }}.0-linux-amd64"
         dest: "{{ binary_path }}"
         remote_src: yes
         force: yes
@@ -35,18 +34,19 @@
 
     - name: Prepare directory for new binary in Cosmovisor
       file:
-        path: "{{ pryzm_directory }}/cosmovisor/upgrades/v{{ pryzmd_version_path }}/bin"
+        path: "{{ pryzm_directory }}/cosmovisor/upgrades/v{{ pryzmd_version }}/bin"
         state: directory
 
     - name: Copy new binary to Cosmovisor upgrade directory
       copy:
-        src: "/tmp/pryzmd-{{ pryzmd_version_url }}-linux-amd64"
-        dest: "{{ pryzm_directory }}/cosmovisor/upgrades/v{{ pryzmd_version_path }}/bin/pryzmd"
-        remote_src: yes
+        src: "/tmp/pryzmd-{{ pryzmd_version }}.0-linux-amd64"
+        dest: "{{ pryzm_directory }}/cosmovisor/upgrades/v{{ pryzmd_version }}/bin/pryzmd"
+        mode: '0755'
+        remote_src: yes        
 
     - name: Copy new binary to genesis directory
       copy:
-        src: "/tmp/pryzmd-{{ pryzmd_version_url }}-linux-amd64"
+        src: "/tmp/pryzmd-{{ pryzmd_version }}.0-linux-amd64"
         dest: "//root/.pryzm/cosmovisor/genesis/bin/pryzmd"
         remote_src: yes
         force: yes 
@@ -54,7 +54,7 @@
 
     - name: Remove temporary binary file
       file:
-        path: "/tmp/pryzmd-{{ pryzmd_version_url }}-linux-amd64"
+        path: "/tmp/pryzmd-{{ pryzmd_version }}.0-linux-amd64"
         state: absent
 
     - name: Start Pryzm node service
