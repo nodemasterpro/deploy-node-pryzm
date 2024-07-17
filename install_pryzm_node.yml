@@ -8,8 +8,8 @@
     chain_id: "indigo-1"
     pryzm_directory: "/root/.pryzm"
     pryzm_binary_url: "https://storage.googleapis.com/pryzm-zone/core/0.13.0/pryzmd-0.13.0-linux-amd64"
-    genesis_url: "https://snap.nodex.one/pryzm-testnet/genesis.json"
-    addrbook_url: "https://snap.nodex.one/pryzm-testnet/addrbook.json"
+    genesis_url: "https://storage.googleapis.com/pryzm-zone/indigo-1/genesis.json"
+    addrbook_url: "https://testnet-files.itrocket.net/pryzm/addrbook.json"
     pryzm_home: "/root/.pryzm"
     go_version: "1.21.6"  # La version de Go à installer
 
